@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { AuthModal } from './components/auth/AuthModal';
 import { Layout } from './components/layout/Layout';
+import { ScrollManager } from './components/layout/ScrollManager';
 import { HomePage } from './pages/HomePage';
 import { ListingDetailPage } from './pages/ListingDetailPage';
 import { CreateListingPage } from './pages/CreateListingPage';
@@ -226,6 +227,11 @@ function MainApp() {
 
   return (
     <>
+      <ScrollManager
+        currentPage={currentPage.type}
+        pageHistory={pageHistory}
+      />
+
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
