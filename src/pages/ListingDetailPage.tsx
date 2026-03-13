@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { t } from '../utils/translations';
-import { MapPin, DollarSign, ArrowLeft, MessageCircle, Star, Calendar } from 'lucide-react';
+import { MapPin, DollarSign, ArrowLeft, MessageCircle, Star, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type ListingDetailPageProps = {
   listingId: string;
@@ -41,6 +41,8 @@ export function ListingDetailPage({ listingId, onBack, onContactSeller, onViewPr
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [sellerRating, setSellerRating] = useState<number | null>(null);
   const [listingCount, setListingCount] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => {
     fetchListing();
@@ -82,6 +84,40 @@ export function ListingDetailPage({ listingId, onBack, onContactSeller, onViewPr
       .eq('status', 'active');
 
     setListingCount(count || 0);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const getImages = () => {
+    return listing?.images && listing.images.length > 0
+      ? listing.images
+      : ['https://images.pexels.com/photos/7045818/pexels-photo-7045818.jpeg?auto=compress&cs=tinysrgb&w=800'];
+  };
+
+  const handleTouchEnd = () => {
+    const images = getImages();
+    if (touchStartX.current - touchEndX.current > 50) {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+    if (touchStartX.current - touchEndX.current < -50) {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
+  const nextImage = () => {
+    const images = getImages();
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const previousImage = () => {
+    const images = getImages();
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
   if (loading) {
@@ -127,25 +163,44 @@ export function ListingDetailPage({ listingId, onBack, onContactSeller, onViewPr
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden mb-4">
           <div className="relative">
-            <div className="aspect-square md:aspect-video bg-gray-100 dark:bg-gray-700">
+            <div
+              className="aspect-square md:aspect-video bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               <img
                 src={images[currentImageIndex]}
                 alt={listing.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
             {images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {images.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                    }`}
-                  />
-                ))}
-              </div>
+              <>
+                <button
+                  onClick={previousImage}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
             {listing.listing_type === 'wanted' && (
               <div className="absolute top-4 left-4 bg-blue-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg">

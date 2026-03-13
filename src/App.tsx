@@ -14,6 +14,7 @@ import { MessagesPage } from './pages/MessagesPage';
 import { FiltersPage, FilterOptions } from './pages/FiltersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { FavoritesPage } from './pages/FavoritesPage';
+import { MyListingsPage } from './pages/MyListingsPage';
 import { supabase } from './lib/supabase';
 import { ListingCard } from './components/listings/ListingCard';
 import { Search, SlidersHorizontal } from 'lucide-react';
@@ -31,7 +32,8 @@ type Page =
   | { type: 'filters' }
   | { type: 'filtered-results' }
   | { type: 'settings' }
-  | { type: 'favorites' };
+  | { type: 'favorites' }
+  | { type: 'my-listings' };
 
 type Listing = {
   id: string;
@@ -170,6 +172,12 @@ function MainApp() {
         return;
       }
       setCurrentPage({ type: 'favorites' });
+    } else if (pageType === 'my-listings') {
+      if (!user) {
+        setShowAuthModal(true);
+        return;
+      }
+      setCurrentPage({ type: 'my-listings' });
     } else if (pageType.startsWith('category-')) {
       const categoryId = pageType.replace('category-', '');
       setCurrentPage({ type: 'category-listings', categoryId, categoryName: '' });
@@ -359,7 +367,11 @@ function MainApp() {
       )}
 
       {currentPage.type === 'favorites' && user && (
-        <FavoritesPage onBack={goBack} />
+        <FavoritesPage onBack={goBack} onNavigateToListing={(id) => navigate({ type: 'listing', id })} />
+      )}
+
+      {currentPage.type === 'my-listings' && user && (
+        <MyListingsPage onBack={goBack} onNavigateToListing={(id) => navigate({ type: 'listing', id })} />
       )}
       </Layout>
     </>

@@ -143,6 +143,17 @@ const translations: Translations = {
   canSignIn: { en: 'You can now sign in with your credentials.', et: 'Nüüd saad sisse logida oma andmetega.' },
   goToSignIn: { en: 'Go to Sign In', et: 'Mine sisselogimisele' },
   haveAccount: { en: 'Already have an account?', et: 'Juba on konto olemas?' },
+
+  myListings: { en: 'My Listings', et: 'Minu kuulutused' },
+  activeListings: { en: 'Active', et: 'Aktiivsed' },
+  soldListings: { en: 'Sold', et: 'Müüdud' },
+  markAsSold: { en: 'Mark as Sold', et: 'Märgi müüduks' },
+  deleteListing: { en: 'Delete', et: 'Kustuta' },
+  editListing: { en: 'Edit', et: 'Muuda' },
+  confirmDelete: { en: 'Are you sure you want to delete this listing?', et: 'Kas oled kindel, et soovid selle kuulutuse kustutada?' },
+  noActiveListings: { en: 'No active listings', et: 'Pole aktiivseid kuulutusi' },
+  noSoldListings: { en: 'No sold listings', et: 'Pole müüdud kuulutusi' },
+  favoriteCount: { en: 'favorites', et: 'lemmikut' },
 };
 
 export function t(key: string, language: Language): string {

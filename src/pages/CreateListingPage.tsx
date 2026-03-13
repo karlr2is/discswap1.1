@@ -35,15 +35,18 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
   const [loading, setLoading] = useState(false);
   const [listingType, setListingType] = useState<'for_sale' | 'wanted'>('for_sale');
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    category_id: '',
-    condition: '',
-    condition_score: '',
-    location: '',
-    images: [] as string[],
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('createListingFormData');
+    return saved ? JSON.parse(saved) : {
+      title: '',
+      description: '',
+      price: '',
+      category_id: '',
+      condition: '',
+      condition_score: '',
+      location: '',
+      images: [] as string[],
+    };
   });
 
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -52,6 +55,10 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('createListingFormData', JSON.stringify(formData));
+  }, [formData]);
 
   const fetchCategories = async () => {
     const { data } = await supabase
@@ -146,6 +153,18 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
     setLoading(false);
 
     if (!error) {
+      localStorage.removeItem('createListingFormData');
+      setFormData({
+        title: '',
+        description: '',
+        price: '',
+        category_id: '',
+        condition: '',
+        condition_score: '',
+        location: '',
+        images: [] as string[],
+      });
+      setImageFiles([]);
       onSuccess();
     }
   };
@@ -299,11 +318,11 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
                 {imageFiles.length > 0 && (
                   <div className="grid grid-cols-3 gap-3">
                     {imageFiles.map((file, index) => (
-                      <div key={index} className="relative">
+                      <div key={index} className="relative bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center" style={{aspectRatio: '1'}}>
                         <img
                           src={URL.createObjectURL(file)}
                           alt=""
-                          className="w-full h-24 object-cover rounded-lg"
+                          className="w-full h-full object-contain rounded-lg"
                         />
                         <button
                           type="button"

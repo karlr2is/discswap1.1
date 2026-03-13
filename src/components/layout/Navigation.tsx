@@ -43,6 +43,7 @@ export function Navigation({
   const [parentCategories, setParentCategories] = useState<ParentCategory[]>([]);
   const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, 'change', (current) => {
@@ -82,7 +83,7 @@ export function Navigation({
   const mobileNavItems = [
     { id: 'home', label: t('browse', language), icon: Home },
     ...(user ? [{ id: 'create', label: t('sell', language), icon: Plus }] : []),
-    { id: 'categories', label: t('categories', language), icon: Search },
+    ...(user ? [{ id: 'menu', label: t('menu', language), icon: Menu }] : []),
   ];
 
   return (
@@ -130,7 +131,7 @@ export function Navigation({
                     <Plus className="w-5 h-5" />
                     <span>{t('sell', language)}</span>
                   </button>
-                  <UserMenu onNavigate={onNavigate} />
+                  <UserMenu onNavigate={onNavigate} externalOpen={mobileMenuOpen} onExternalClose={() => setMobileMenuOpen(false)} />
                 </>
               ) : (
                 <button
@@ -145,17 +146,15 @@ export function Navigation({
 
             <div className="md:hidden flex items-center gap-2">
               <button
-                onClick={() => onNavigate('search')}
-                className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                onClick={() => onNavigate('categories')}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
               >
                 <Search className="w-6 h-6" />
               </button>
-              {user ? (
-                <UserMenu onNavigate={onNavigate} />
-              ) : (
+              {!user && (
                 <button
                   onClick={onShowAuth}
-                  className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                  className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
                 >
                   <Menu className="w-6 h-6" />
                 </button>
@@ -198,11 +197,17 @@ export function Navigation({
             return (
               <button
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => {
+                  if (item.id === 'menu') {
+                    setMobileMenuOpen(true);
+                  } else {
+                    onNavigate(item.id);
+                  }
+                }}
                 className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors ${
                   currentPage === item.id
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 <Icon className="w-6 h-6" />
@@ -212,6 +217,7 @@ export function Navigation({
           })}
         </div>
       </nav>
+
     </>
   );
 }
