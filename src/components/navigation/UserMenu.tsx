@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, MessageSquare, User, Settings, Heart, LogOut, ListIcon } from 'lucide-react';
+import { Menu, X, MessageSquare, User, Settings, Heart, LogOut, List as ListIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { t } from '../../utils/translations';
