@@ -21,10 +21,10 @@ export function UserMenu({ onNavigate, externalOpen, onExternalClose }: UserMenu
     if (menuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
     };
   }, [menuOpen]);
 
@@ -48,9 +48,12 @@ export function UserMenu({ onNavigate, externalOpen, onExternalClose }: UserMenu
     closeMenu();
   };
 
+  // Only render the button trigger when not controlled externally
+  const showButton = externalOpen === undefined;
+
   return (
     <>
-      {externalOpen === undefined && (
+      {showButton && (
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

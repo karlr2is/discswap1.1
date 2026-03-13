@@ -131,7 +131,7 @@ export function Navigation({
                     <Plus className="w-5 h-5" />
                     <span>{t('sell', language)}</span>
                   </button>
-                  <UserMenu onNavigate={onNavigate} externalOpen={mobileMenuOpen} onExternalClose={() => setMobileMenuOpen(false)} />
+                  <UserMenu onNavigate={onNavigate} />
                 </>
               ) : (
                 <button
@@ -218,6 +218,14 @@ export function Navigation({
         </div>
       </nav>
 
+      {/* Mobile menu - only rendered when user is logged in */}
+      {user && (
+        <UserMenu
+          onNavigate={onNavigate}
+          externalOpen={mobileMenuOpen}
+          onExternalClose={() => setMobileMenuOpen(false)}
+        />
+      )}
     </>
   );
 }
