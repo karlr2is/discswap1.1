@@ -43,9 +43,11 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
     condition: '',
     condition_score: '',
     location: '',
-    disc_speed: '',
     images: [] as string[],
   });
+
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   useEffect(() => {
     fetchCategories();
@@ -72,21 +74,50 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
     });
   };
 
-  const handleImageUrlAdd = () => {
-    const url = prompt('Enter image URL:');
-    if (url) {
-      setFormData({
-        ...formData,
-        images: [...formData.images, url],
-      });
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setImageFiles([...imageFiles, ...newFiles]);
     }
   };
 
   const handleImageRemove = (index: number) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
+    setImageFiles(imageFiles.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    if (imageFiles.length === 0) return [];
+
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `listings/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('listing-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          continue;
+        }
+
+        const { data } = supabase.storage
+          .from('listing-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(data.publicUrl);
+      }
+    } finally {
+      setUploadingImages(false);
+    }
+
+    return uploadedUrls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,6 +125,9 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
     if (!user) return;
 
     setLoading(true);
+
+    // Upload images first
+    const imageUrls = await uploadImages();
 
     const { error } = await supabase.from('listings').insert({
       user_id: user.id,
@@ -104,9 +138,8 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
       condition: formData.condition || null,
       condition_score: formData.condition_score ? parseInt(formData.condition_score) : null,
       location: formData.location || null,
-      disc_speed: formData.disc_speed ? parseInt(formData.disc_speed) : null,
       listing_type: listingType,
-      images: formData.images,
+      images: imageUrls,
       status: 'active',
     });
 
@@ -174,7 +207,6 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={t('titlePlaceholder', language)}
                 required
               />
             </div>
@@ -189,94 +221,73 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={4}
-                placeholder={t('descriptionPlaceholder', language)}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('price', language)}
-                </label>
-                <input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('pricePlaceholder', language)}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('category', language)}
-                </label>
-                <select
-                  id="category"
-                  value={formData.category_id}
-                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">{t('selectCategory', language)}</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="condition" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('condition', language)}
-                </label>
-                <select
-                  id="condition"
-                  value={formData.condition}
-                  onChange={(e) => handleConditionChange(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">{t('selectCondition', language)}</option>
-                  {CONDITIONS.map((cond) => (
-                    <option key={cond.value} value={cond.value}>
-                      {cond.label} ({cond.score}/10)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('location', language)}
-                </label>
-                <input
-                  id="location"
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('locationPlaceholder', language)}
-                />
-              </div>
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('category', language)}
+              </label>
+              <select
+                id="category"
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">{t('selectCategory', language)}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
-              <label htmlFor="disc_speed" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('discSpeed', language)}
+              <label htmlFor="condition" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('condition', language)}
+              </label>
+              <select
+                id="condition"
+                value={formData.condition}
+                onChange={(e) => handleConditionChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">{t('selectCondition', language)}</option>
+                {CONDITIONS.map((cond) => (
+                  <option key={cond.value} value={cond.value}>
+                    {cond.label} ({cond.score}/10)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('price', language)}
               </label>
               <input
-                id="disc_speed"
+                id="price"
                 type="number"
-                min="1"
-                max="14"
-                value={formData.disc_speed}
-                onChange={(e) => setFormData({ ...formData, disc_speed: e.target.value })}
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={t('discSpeedPlaceholder', language)}
+                placeholder={t('pricePlaceholder', language)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('location', language)}
+              </label>
+              <input
+                id="location"
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder={t('locationPlaceholder', language)}
               />
             </div>
 
@@ -285,41 +296,46 @@ export function CreateListingPage({ onBack, onSuccess }: CreateListingPageProps)
                 {t('images', language)}
               </label>
               <div className="space-y-3">
-                {formData.images.map((url, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <img src={url} alt="" className="w-20 h-20 object-cover rounded" />
-                    <input
-                      type="text"
-                      value={url}
-                      readOnly
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleImageRemove(index)}
-                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+                {imageFiles.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3">
+                    {imageFiles.map((file, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt=""
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleImageRemove(index)}
+                          className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full hover:bg-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={handleImageUrlAdd}
-                  className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-                >
+                )}
+                <label className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 cursor-pointer">
                   <Upload className="w-5 h-5" />
-                  {t('addImageUrl', language)}
-                </button>
+                  <span>{t('images', language)}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    multiple
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading || !formData.title}
+              disabled={loading || uploadingImages || !formData.title}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? t('creating', language) : t('createListing', language)}
+              {loading || uploadingImages ? t('creating', language) : t('createListing', language)}
             </button>
           </form>
         </div>

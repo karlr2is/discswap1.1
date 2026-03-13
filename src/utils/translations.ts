@@ -50,7 +50,7 @@ const translations: Translations = {
 
   createListing: { en: 'Create Listing', et: 'Loo kuulutus' },
   listingType: { en: 'Listing Type', et: 'Kuulutuse tüüp' },
-  forSale: { en: 'For Sale', et: 'Müügis' },
+  forSale: { en: 'For Sale', et: 'Müün' },
   wanted: { en: 'Wanted', et: 'Soovin osta' },
   title: { en: 'Title', et: 'Pealkiri' },
   titlePlaceholder: { en: 'e.g., Innova Destroyer - Star Plastic', et: 'nt Innova Destroyer - Star plastik' },
